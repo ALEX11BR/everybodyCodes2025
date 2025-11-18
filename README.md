@@ -1,5 +1,7 @@
 # Personal attempts at solving Everybody Codes 2025 in Python (+ numPy)
 
+My personal challenge this year is to use numPy arrays instead of Python builtin `list`s.
+
 In every `d{day}` folder there are my solutions to that day's problems (as `p{part}.py`).
 The day's inputs sit in that folder in files named `input{part_number}` (I don't publish them here).
 
