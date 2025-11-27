@@ -16,11 +16,13 @@ class Plant:
 
 
 @cache
-def compute_energy(plant_id: int, plants: tuple[Plant, ...], activation: int) -> int:
+def compute_energy(
+    plant_id: int, plants: tuple[Plant, ...], activation: tuple[bool, ...]
+) -> int:
     ans = 0
     for src, thickness in plants[plant_id - 1].branches:
         if src <= -1:
-            if activation & (1 << (plant_id - 1)):
+            if activation[plant_id - 1]:
                 ans += thickness
             continue
 
@@ -35,6 +37,7 @@ if __name__ == "__main__":
     plant = None
     last_plant = 0
     plants = tuple()
+    optimal_config = None
     activations = None
 
     for line in sys.stdin.readlines():
@@ -42,13 +45,7 @@ if __name__ == "__main__":
 
         if activations is not None:
             values = np.fromstring(line, dtype="bool", sep=" ")
-            mask = int(
-                np.sum(
-                    np.fromiter(map(lambda n: 1 << n, range(len(values))), dtype="int"),
-                    where=values,
-                )
-            )
-            activations += (mask,)
+            activations += (tuple(values),)
         elif plant is None:
             if line_match := re.match("Plant ([0-9]*) with thickness ([0-9]*)", line):
                 plant = Plant(int(line_match[1]), int(line_match[2]))
@@ -63,11 +60,28 @@ if __name__ == "__main__":
                 thickness = int(line_match[4])
 
                 plant.branches += ((source, thickness),)
+
+                if line_match[1] is None:
+                    if optimal_config is None:
+                        optimal_config = np.zeros(plant.num - 1, dtype="bool")
+
+                    if len(plants[source - 1].branches) == 1:
+                        optimal_config[source - 1] = thickness > 0
             else:
                 last_plant = plant.num
                 plant = None
 
+    optimal_energy = compute_energy(last_plant, plants, tuple(optimal_config))
     ans = sum(
-        compute_energy(last_plant, plants, activation) for activation in activations
+        map(
+            lambda e: optimal_energy - e,
+            filter(
+                lambda e: e > 0,
+                map(
+                    lambda activation: compute_energy(last_plant, plants, activation),
+                    activations,
+                ),
+            ),
+        )
     )
     print(ans)
